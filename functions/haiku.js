@@ -1,8 +1,7 @@
 let syllLib = require('syllable');
-let request = require('rest-request');
-let newReq = new request('https://api.datamuse.com');
-function makeLine (numSyllables, wordPool) {
-  if (numSyllables === 0) {
+const superagent = require('superagent');
+function makeLine (numSyllables, wordPool) { //Func generates 3 lines according to input (haiku lines have syllables of # 5, 7, 5; generate words from list of words relating to input word)
+  if (numSyllables == 0 || numSyllables != parseInt(numSyllables, 10)) {
     numSyllables = 5;
   }
   let line = '';
@@ -17,14 +16,22 @@ function makeLine (numSyllables, wordPool) {
   }
   return line.trim();
 };
-exports.handler = function(context, event, callback) {
+exports.handler = async function(context, event, callback) {
   let twiml = new Twilio.twiml.MessagingResponse();
-  let haiku;
-  console.log(`eventBody ${event.Body}`);
-  newReq.get('/words', {rel_jja: event.Body.toLowerCase().trim(), max: 100}).then(function (words) {
-    haiku = `${makeLine(5, words)} \n${makeLine(7, words)}\n${makeLine(5, words)}`;
-    twiml.message(haiku);
-    return callback(null, twiml);
+  let inbMsg = event.Body.toLowerCase().trim();
+  if(inbMsg.slice(-1) == "s") {
+    inbMsg = inbMsg.slice(0,-1);
   }
-);
-};
+  superagent.get(`https://api.datamuse.com/words`)
+  .query({rel_jja: inbMsg, max: 100}) //query words related to inbound SMS
+  .end((err, res) => {
+    if(res.body.length == 0) { //Datamuse doesn't have any related words
+      twiml.message(`Oh no I'm sorry \nYour haiku is out to eat \nTry a different word`); 
+      return callback(null, twiml);
+    }
+    let haiku = `${makeLine(5, res.body)} \n${makeLine(7, res.body)}\n${makeLine(5, res.body)}`;
+    twiml.message(haiku);
+    return callback(null, twiml);  
+  });
+}
+

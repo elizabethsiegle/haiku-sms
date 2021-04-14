@@ -8,7 +8,12 @@
     "deploy": "twilio-run deploy"
   },
   "dependencies": {
+    "axios": "^0.21.1",
+    "got": "^11.8.2",
+    "https": "^1.0.0",
+    "isomorphic-fetch": "^3.0.0",
     "rest-request": "^1.0.12",
+    "superagent": "^6.1.0",
     "syllable": "^3.3.0"
   },
   "devDependencies": {
